@@ -7,7 +7,7 @@ import datetime
 respuesta = ''
 def buscarebay(busqueda):
 	try:
-		api = Finding(appid="HowlJenk-WaLSearc-PRD-c6c5cebfd-8b15464c", config_file=None)
+		api = Finding(appid="YOUR EBAY APP ID", config_file=None)
 		response = api.execute('findItemsAdvanced', {'keywords': busqueda)
 		try:
 				if response.reply.searchResult.item != '':
@@ -35,7 +35,7 @@ def buscarebay(busqueda):
 		print(e)
 		print(e.response.dict())
 
-bot = telebot.TeleBot("423141802:AAE7Cd8T0a0RtiJroBBsazr7Aij-xUUuHY4")
+bot = telebot.TeleBot("Your token")
 @bot.message_handler(commands=['buscar'])
 def buscar(message):
 	cid = message.chat.id
