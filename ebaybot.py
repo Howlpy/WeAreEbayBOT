@@ -3,8 +3,8 @@ from ebaysdk.finding import Connection as Finding
 from ebaysdk.exception import ConnectionError
 import telebot
 
-EBAY_APP_ID = "HowlJenk-WaLSearc-PRD-c6c5cebfd-8b15464c"
-TELEGRAM_BOT_API_TOKEN = "423141802:AAE7Cd8T0a0RtiJroBBsazr7Aij-xUUuHY4"
+EBAY_APP_ID = "<YOUR EBAY APP ID>"
+TELEGRAM_BOT_API_TOKEN = "<YOUR TELEGRAM BOT API TOKEN>"
 
 bot = telebot.AsyncTeleBot(TELEGRAM_BOT_API_TOKEN)
 telebot.logger.setLevel(logging.DEBUG)
