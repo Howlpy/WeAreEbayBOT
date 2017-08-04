@@ -1,57 +1,65 @@
-import telebot
+import logging
 from ebaysdk.finding import Connection as Finding
 from ebaysdk.exception import ConnectionError
-import json
-import datetime
-import threading
+import telebot
 
-respuesta = []
-def buscarebay(busqueda):
-		api = Finding(appid="HowlJenk-WaLSearc-PRD-c6c5cebfd-8b15464c", config_file=None)
-		response = api.execute('findItemsAdvanced', {'keywords': busqueda})
-		try:
-			if response.reply.searchResult.item != '':
-				for a in response.reply.searchResult.item:
-					global respuesta
-					precio = "El precio es: " + a.sellingStatus.currentPrice.value
-					Titulo = "Producto: " + a.title
-					metodo_pago = "Pago con: " + str(a.paymentMethod)
-					url = "URL: " + a.viewItemURL
-					respuesta.append(Titulo + "\n" + precio + "\n" + metodo_pago + "\n" + url)
-			else:
-				pass
+EBAY_APP_ID = "HowlJenk-WaLSearc-PRD-c6c5cebfd-8b15464c"
+TELEGRAM_BOT_API_TOKEN = "423141802:AAE7Cd8T0a0RtiJroBBsazr7Aij-xUUuHY4"
 
-		except ConnectionError as e:
-			print(e)
-			print(e.response.dict())
+bot = telebot.AsyncTeleBot(TELEGRAM_BOT_API_TOKEN)
+telebot.logger.setLevel(logging.DEBUG)
 
-bot = telebot.TeleBot("423141802:AAE7Cd8T0a0RtiJroBBsazr7Aij-xUUuHY4")
-@bot.message_handler(commands=['buscar'])
-def buscarfalso(message):
-	threading.Thread(target=buscar, args=(message,)).start()
-def buscar(message):
-	global respuesta
-	cid = message.chat.id
-	if message.content_type == 'text':
-		if len(message.text.split('/buscar ')) == 2:
-			mclear = message.text.split('/buscar ')[1]
-			buscarebay(mclear)
-			print("[" + str(datetime.datetime.now()) + "] " + str(message.chat.first_name) + " [" + str(message.chat.id) + "]: " + message.text)
-			bot.send_chat_action(cid, 'typing')
-			while True:
-				for a in respuesta:
-					bot.reply_to(message,a)
+def eBaySearch(item):
+    api = Finding(appid=EBAY_APP_ID, config_file=None)
+    response = api.execute(
+        "findItemsAdvanced",
+        {
+            "keywords": item,
+            "sortOrder": "CurrentPriceHigher"
+        }
+    )
+    try:
+        if response.reply.searchResult.item == "":
+            return None
+        cheapestitem = response.reply.searchResult.item[-1]
+        return (
+            cheapestitem.sellingStatus.currentPrice.value,
+            cheapestitem.title,
+            str(cheapestitem.paymentMethod),
+            cheapestitem.viewItemURL
+        )
+    except ConnectionError as e:
+        print(e)
+        print(e.response.dict())
 
-				respuesta = []
+@bot.message_handler(commands=["s", "search"])
+def search_by_command(message):
+    args = message.text.split()
+    bot.send_chat_action(cid, "typing")
+    if len(args) > 2:
+        search = eBaySearch(" ".join(args[1:]))
+        if search:
+            bot.reply_to(message, MESSAGE_TEMPLATE.format(*search))
+        else:
+            bot.reply_to(message, "Nothing was found.")
 
+@bot.message_handler(commands=["help", "start"])
+def welcome(message):
+    bot.reply_to(message, WELCOME_MESSAGE)
 
-		else:
-			bot.reply_to(message, "Que quieres buscar?")
-			pass
-@bot.message_handler(commands=['help'])
-def help(message):
-	cid = message.chat.id
-	bot.reply_to(message, "Bienvenido al bot de busqueda en ebay, creado por @etarra(Howl)  \n \n/buscar + Articulo para buscar un producto en ebay con el menor precio")
+WELCOME_MESSAGE = """Welcome to eBay search bot, made by @Etarra
 
+/(s)earch <item> - Search the cheapest offer of an item on eBay."""
 
-bot.polling()
+MESSAGE_TEMPLATE = """Item: {0}
+Price: {1}
+Paying method: {2}
+URL: {3}
+"""
+
+if __name__ == "__main__":
+    try:
+        bot.polling()
+    except KeyboardInterrupt:
+        print("Exiting by user request.\n")
+        exit()
