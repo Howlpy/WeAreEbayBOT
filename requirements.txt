@@ -1,2 +1,2 @@
 ebaysdk
-telebot
+pyTelegramBotAPI
